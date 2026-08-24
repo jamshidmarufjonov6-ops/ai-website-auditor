@@ -5,6 +5,7 @@ Never put real secrets in code. Copy .env.example to .env for local development.
 from functools import lru_cache
 from typing import List
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -26,6 +27,16 @@ class Settings(BaseSettings):
     # Production (or docker-compose) should use PostgreSQL, e.g.
     # DATABASE_URL=postgresql+psycopg://auditor:auditor@localhost:5432/auditor
     DATABASE_URL: str = "sqlite:///./auditor.db"
+
+    @field_validator("DATABASE_URL")
+    @classmethod
+    def normalize_database_url(cls, value: str) -> str:
+        """Accept Render's postgres:// URL and force the installed psycopg v3 driver."""
+        if value.startswith("postgres://"):
+            return "postgresql+psycopg://" + value[len("postgres://"):]
+        if value.startswith("postgresql://"):
+            return "postgresql+psycopg://" + value[len("postgresql://"):]
+        return value
 
     # When true, the app runs `alembic upgrade head` on startup instead of
     # `Base.metadata.create_all`. Enable this in production deployments.

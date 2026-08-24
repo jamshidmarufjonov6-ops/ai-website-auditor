@@ -132,7 +132,7 @@ See [`.env.example`](.env.example) for the full list. Important ones:
 | Variable | Purpose | Default |
 | --- | --- | --- |
 | `ENVIRONMENT` | `development` \| `production` | `development` |
-| `DATABASE_URL` | SQLAlchemy database URL | `sqlite:///./auditor.db` |
+| `DATABASE_URL` | SQLAlchemy database URL. Render's `postgres://...` URL is auto-converted to `postgresql+psycopg://...` | `sqlite:///./auditor.db` |
 | `RUN_MIGRATIONS_ON_STARTUP` | Run `alembic upgrade head` on startup | `false` |
 | `SECRET_KEY` | JWT signing secret (change in production) | dev-only value |
 | `REDIS_URL` | Reserved for future queue/cache use | `redis://localhost:6379/0` |
@@ -249,15 +249,43 @@ The suite covers:
 
 **Frontend (Vercel)**
 
-1. Push the `frontend` directory as the root (or configure the monorepo root).
-2. Set `BACKEND_URL` to the deployed backend origin.
-3. Leave `NEXT_PUBLIC_API_URL` empty so the rewrite proxy is used.
+1. Set the Vercel project root directory to `frontend`.
+2. Set `BACKEND_URL` to the deployed backend origin, e.g. `https://your-backend.onrender.com`.
+3. Leave `NEXT_PUBLIC_API_URL` empty so the rewrite proxy is used (this keeps auth cookies same-origin and avoids CORS/cross-site cookie issues).
+
+**Backend (Render)**
+
+This is a monorepo, so the Render service root must be the `backend/` folder.
+
+1. In Render, create a **Web Service** connected to this GitHub repo.
+2. Set **Root Directory** to `backend`.
+   - Render then reads `backend/requirements.txt`, `backend/.python-version`, and `backend/Procfile` from the service root.
+3. Set **Build Command** to:
+   ```bash
+   pip install -r requirements.txt
+   ```
+4. Set **Start Command** to (or rely on the checked-in `backend/Procfile`):
+   ```bash
+   uvicorn app.main:app --host 0.0.0.0 --port $PORT
+   ```
+5. Add a managed **PostgreSQL** database and set these environment variables in Render:
+   ```bash
+   ENVIRONMENT=production
+   SECRET_KEY=<strong-random-string>
+   # You can paste Render's Internal Database URL (postgres://...) directly;
+   # the app automatically converts it to use the installed psycopg v3 driver.
+   DATABASE_URL=postgresql+psycopg://<user>:<password>@<host>:<port>/<database>
+   RUN_MIGRATIONS_ON_STARTUP=true
+   COOKIE_SECURE=true
+   CORS_ORIGINS=https://your-frontend.vercel.app
+   ```
+   The app applies Alembic migrations on startup and refuses to boot with the default `SECRET_KEY` or SQLite in production.
 
 **Backend (any Python host)**
 
-1. Set `ENVIRONMENT=production`, a strong `SECRET_KEY`, `DATABASE_URL` (managed PostgreSQL), `RUN_MIGRATIONS_ON_STARTUP=true`, and `COOKIE_SECURE=true`.
+1. `cd backend`
 2. Install `requirements.txt` and run `uvicorn app.main:app --host 0.0.0.0 --port 8000` behind TLS.
-3. The app applies Alembic migrations on startup and refuses to boot with the default `SECRET_KEY` or SQLite in production.
+3. Set `ENVIRONMENT=production`, a strong `SECRET_KEY`, `DATABASE_URL` (managed PostgreSQL), `RUN_MIGRATIONS_ON_STARTUP=true`, and `COOKIE_SECURE=true`.
 4. Add Redis and swap the in-process queue for Celery when scaling beyond one instance.
 
 ## License
