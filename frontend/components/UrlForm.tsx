@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useI18n } from "@/i18n";
@@ -72,9 +71,7 @@ export function UrlForm({ compact = false, ctaLabel }: { compact?: boolean; ctaL
       )}
       {limitReached && (
         <div className="mt-3 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-950/50 dark:text-amber-200">
-          <Link href="/pricing" className="font-semibold underline">
-            {t("urlUpgradeCta")}
-          </Link>
+          {t("urlUpgradeCta")}
         </div>
       )}
       <p className="mt-3 text-xs text-ink-400 dark:text-ink-400">

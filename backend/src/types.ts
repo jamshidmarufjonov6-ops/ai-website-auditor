@@ -1,3 +1,5 @@
+import type { ObjectId } from "mongodb";
+
 export type CheckStatus = "pass" | "warning" | "fail";
 export type Priority = "CRITICAL" | "HIGH" | "MEDIUM" | "LOW" | "PASS";
 
@@ -7,8 +9,8 @@ export interface CheckResult {
   status: CheckStatus;
   score: number;
   title: string;
-  description: string; // legacy alias of why_it_matters
-  recommendation: string; // legacy alias of how_to_fix
+  description: string;
+  recommendation: string;
   weight: number;
   details?: Record<string, unknown>;
   what_was_checked: string;
@@ -67,68 +69,34 @@ export interface AuditSummary {
   overall_explanation?: string;
 }
 
-export interface Audit {
-  public_id: string;
+export interface AuditResults {
+  checks: CheckResult[];
+  pages_crawled: number;
+  crawl_limited: boolean;
+  broken_links: { url: string; status_code: number }[];
+  fetch_errors: { url: string; kind: string; message: string; status_code?: number }[];
+  analyzer_errors: string[];
+  partial: boolean;
+}
+
+export interface AuditRecord {
+  _id: ObjectId;
+  publicId: string;
+  userId: ObjectId | null;
+  websiteId: ObjectId | null;
   url: string;
   status: "queued" | "running" | "completed" | "failed";
   progress: number;
   stage: string;
-  overall_score: number | null;
-  category_scores: Record<string, CategoryScore> | null;
+  maxPages: number;
+  language: string;
+  overallScore: number | null;
+  categoryScores: Record<string, CategoryScore> | null;
   summary: AuditSummary | null;
-  max_pages?: number | null;
-  language?: string;
-  results: {
-    checks: CheckResult[];
-    pages_crawled: number;
-    crawl_limited: boolean;
-    broken_links: { url: string; status_code: number }[];
-    fetch_errors: { url: string; kind: string; message: string; status_code?: number }[];
-    analyzer_errors: string[];
-    partial: boolean;
-  } | null;
-  ai_recommendations: {
-    provider: string;
-    actions: AIAction[];
-  } | null;
-  error_message: string | null;
-  error_code: string | null;
-  started_at: string;
-  completed_at: string | null;
-  previous_score: number | null;
-  score_change: number | null;
-}
-
-export interface AuditListItem {
-  public_id: string;
-  url: string;
-  status: string;
-  overall_score: number | null;
-  started_at: string;
-  score_change: number | null;
-  partial?: boolean | null;
-  error_code?: string | null;
-  error_message?: string | null;
-}
-
-export interface DashboardStats {
-  total_audits: number;
-  completed_audits: number;
-  average_score: number | null;
-  best_score: number | null;
-  recent_audits: {
-    public_id: string;
-    url: string;
-    status: string;
-    overall_score: number | null;
-    started_at: string;
-    partial: boolean;
-    error_code: string | null;
-  }[];
-}
-
-export interface User {
-  id: string;
-  email: string;
-  created_at: string;
+  results: AuditResults | null;
+  aiRecommendations: { provider: string; actions: AIAction[] } | null;
+  errorMessage: string | null;
+  errorCode: string | null;
+  startedAt: Date;
+  completedAt: Date | null;
 }

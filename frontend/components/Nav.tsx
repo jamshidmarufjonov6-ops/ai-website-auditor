@@ -64,9 +64,6 @@ export function Nav() {
           <Link href="/#features" className="hidden text-ink-600 hover:text-ink-900 dark:text-ink-300 dark:hover:text-white sm:inline">
             {t("navFeatures")}
           </Link>
-          <Link href="/pricing" className="hidden text-ink-600 hover:text-ink-900 dark:text-ink-300 dark:hover:text-white sm:inline">
-            {t("navPricing")}
-          </Link>
           {user ? (
             <>
               <Link href="/dashboard" className="text-ink-600 hover:text-ink-900 dark:text-ink-300 dark:hover:text-white">

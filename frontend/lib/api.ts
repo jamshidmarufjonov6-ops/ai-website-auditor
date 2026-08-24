@@ -1,6 +1,7 @@
-import type { Audit, AuditListItem, DashboardStats, SubscriptionInfo, User } from "./types";
+import type { Audit, AuditListItem, DashboardStats, User } from "./types";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "";
+const TOKEN_KEY = "auditor_token";
 
 export class ApiError extends Error {
   code?: string;
@@ -14,13 +15,30 @@ export class ApiError extends Error {
   }
 }
 
+export function getToken(): string | null {
+  if (typeof window === "undefined") return null;
+  return window.localStorage.getItem(TOKEN_KEY);
+}
+
+function setToken(token: string): void {
+  window.localStorage.setItem(TOKEN_KEY, token);
+}
+
+export function clearToken(): void {
+  if (typeof window !== "undefined") window.localStorage.removeItem(TOKEN_KEY);
+}
+
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...(options.headers as Record<string, string> | undefined),
+  };
+  const token = getToken();
+  if (token) headers.Authorization = `Bearer ${token}`;
+
   const res = await fetch(`${API_BASE}${path}`, {
     credentials: "include",
-    headers: {
-      "Content-Type": "application/json",
-      ...(options.headers || {}),
-    },
+    headers,
     ...options,
   });
   if (!res.ok) {
@@ -58,27 +76,31 @@ export const api = {
   deleteAudit: (publicId: string) =>
     request<{ ok: boolean }>(`/api/audits/${publicId}`, { method: "DELETE" }),
 
-  register: (email: string, password: string) =>
-    request<User>("/api/auth/register", {
+  register: async (email: string, password: string): Promise<User> => {
+    const data = await request<{ user: User; token: string }>("/api/auth/register", {
       method: "POST",
       body: JSON.stringify({ email, password }),
-    }),
+    });
+    setToken(data.token);
+    return data.user;
+  },
 
-  login: (email: string, password: string) =>
-    request<User>("/api/auth/login", {
+  login: async (email: string, password: string): Promise<User> => {
+    const data = await request<{ user: User; token: string }>("/api/auth/login", {
       method: "POST",
       body: JSON.stringify({ email, password }),
-    }),
+    });
+    setToken(data.token);
+    return data.user;
+  },
 
-  logout: () => request<{ ok: boolean }>("/api/auth/logout", { method: "POST" }),
+  logout: async (): Promise<void> => {
+    try {
+      await request<{ ok: boolean }>("/api/auth/logout", { method: "POST" });
+    } finally {
+      clearToken();
+    }
+  },
 
   me: () => request<User>("/api/auth/me"),
-
-  getSubscription: () => request<SubscriptionInfo>("/api/billing/subscription"),
-
-  checkout: () =>
-    request<{ url: string }>("/api/billing/checkout", { method: "POST" }),
-
-  portal: () =>
-    request<{ url: string }>("/api/billing/portal", { method: "POST" }),
 };
