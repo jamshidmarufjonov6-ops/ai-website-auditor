@@ -23,7 +23,10 @@ describe("API integration (MongoDB)", { skip: !hasMongo && "MONGODB_URL not set 
   after(async () => {
     try {
       const db = collections();
-      const users = await db.users.find({ email: { $in: [EMAIL, EMAIL2] } }).toArray();
+      // Clean up every user created by this test run (EMAIL, EMAIL2, legacy…).
+      const users = await db.users
+        .find({ email: { $regex: `^test\\+${RUN_ID}` } })
+        .toArray();
       const ids = users.map((u) => u._id);
       if (ids.length) {
         await db.audits.deleteMany({ userId: { $in: ids } });
@@ -172,6 +175,47 @@ describe("API integration (MongoDB)", { skip: !hasMongo && "MONGODB_URL not set 
       .send({ url: "https://example.com", language: "en" });
     assert.equal(blocked.status, 403);
     assert.equal(blocked.body.detail.code, "credits_exhausted");
+  });
+
+  it("grants free credits to legacy accounts missing the credits field", { timeout: 90_000 }, async () => {
+    // Simulate an account created before the credits feature.
+    const EMAIL3 = `test+${RUN_ID}+legacy@example.com`;
+    const reg = await request(app).post("/api/auth/register").send({ email: EMAIL3, password: PASSWORD });
+    assert.equal(reg.status, 201);
+    await collections().users.updateOne({ email: EMAIL3 }, { $unset: { credits: "" } });
+
+    const login = await request(app).post("/api/auth/login").send({ email: EMAIL3, password: PASSWORD });
+    assert.equal(login.status, 200);
+    const legacyToken = login.body.token;
+
+    // Any authenticated request backfills the credits field.
+    const cred = await request(app).get("/api/billing/credits").set("Authorization", `Bearer ${legacyToken}`);
+    assert.equal(cred.status, 200);
+    assert.equal(cred.body.credits, 2);
+
+    // Creating an audit must work for legacy accounts now.
+    // (Unique X-Forwarded-For so this test has its own rate-limit window.)
+    const created = await request(app)
+      .post("/api/audits")
+      .set("Authorization", `Bearer ${legacyToken}`)
+      .set("X-Forwarded-For", `10.0.${RUN_ID % 250}.77`)
+      .send({ url: "https://example.com", language: "en" });
+    assert.equal(created.status, 201);
+
+    // Wait for the audit to finish so no background work is left running.
+    let current = created.body;
+    for (let i = 0; i < 60; i++) {
+      if (current.status === "completed" || current.status === "failed") break;
+      await new Promise((r) => setTimeout(r, 1000));
+      const res = await request(app)
+        .get(`/api/audits/${current.public_id}`)
+        .set("Authorization", `Bearer ${legacyToken}`);
+      assert.equal(res.status, 200);
+      current = res.body;
+    }
+    assert.ok(["completed", "failed"].includes(current.status));
+
+    await request(app).delete(`/api/audits/${current.public_id}`).set("Authorization", `Bearer ${legacyToken}`);
   });
 
   it("allows the owner to delete their audit", async () => {

@@ -35,6 +35,16 @@ export const config = {
   stripeCreditPackPriceId: process.env.STRIPE_CREDIT_PACK_PRICE_ID || "",
   stripeSuccessUrl: process.env.STRIPE_SUCCESS_URL || "http://localhost:3000/credits?billing=success",
   stripeCancelUrl: process.env.STRIPE_CANCEL_URL || "http://localhost:3000/credits?billing=cancelled",
+
+  // Admin / contact system
+  adminEmail: (process.env.ADMIN_EMAIL || "").trim().toLowerCase(),
+
+  // Gmail SMTP forwarding for contact messages (optional).
+  // SMTP_USER = your Gmail address, SMTP_PASS = Google App Password (16 chars).
+  smtpHost: process.env.SMTP_HOST || "smtp.gmail.com",
+  smtpPort: Number(process.env.SMTP_PORT || 465),
+  smtpUser: process.env.SMTP_USER || "",
+  smtpPass: process.env.SMTP_PASS || "",
 } as const;
 
 export function corsOriginList(): string[] {

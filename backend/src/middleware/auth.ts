@@ -1,5 +1,6 @@
 import type { NextFunction, Request, Response } from "express";
 import { ObjectId } from "mongodb";
+import { config } from "../config.js";
 import { collections } from "../db.js";
 import { decodeAccessToken } from "../security.js";
 import type { UserDoc } from "../db.js";
@@ -23,7 +24,16 @@ export async function getOptionalUser(req: AuthRequest): Promise<UserDoc | null>
   const userId = decodeAccessToken(token);
   if (!userId) return null;
   try {
-    return await collections().users.findOne({ _id: new ObjectId(userId) });
+    const users = collections().users;
+    let user = await users.findOne({ _id: new ObjectId(userId) });
+    // Accounts created before the credits system have no `credits` field.
+    // Grant them the free credits on their first authenticated request so
+    // they are not permanently blocked with "credits_exhausted".
+    if (user && (user.credits === undefined || user.credits === null)) {
+      await users.updateOne({ _id: user._id }, { $set: { credits: config.freeCredits } });
+      user = { ...user, credits: config.freeCredits };
+    }
+    return user;
   } catch {
     return null;
   }
@@ -42,6 +52,18 @@ export async function optionalAuth(req: AuthRequest, _res: Response, next: NextF
 export function requiredAuth(req: AuthRequest, res: Response, next: NextFunction): void {
   if (!req.user) {
     res.status(401).json({ detail: "Please log in to continue." });
+    return;
+  }
+  next();
+}
+
+export function requiredAdmin(req: AuthRequest, res: Response, next: NextFunction): void {
+  if (!req.user) {
+    res.status(401).json({ detail: "Please log in to continue." });
+    return;
+  }
+  if (!config.adminEmail || req.user.email.toLowerCase() !== config.adminEmail) {
+    res.status(403).json({ detail: "Admin access required." });
     return;
   }
   next();

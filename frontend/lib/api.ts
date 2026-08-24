@@ -1,4 +1,4 @@
-import type { Audit, AuditListItem, CreditsInfo, DashboardStats, User } from "./types";
+import type { AdminMessagesResponse, Audit, AuditListItem, CreditsInfo, DashboardStats, MessageStatus, User } from "./types";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "";
 const TOKEN_KEY = "auditor_token";
@@ -127,4 +127,24 @@ export const api = {
   },
 
   me: () => request<User>("/api/auth/me"),
+
+  // ---- Contact / support ----
+
+  contact: (payload: { name: string; email: string; subject: string; message: string }) =>
+    request<{ ok: boolean; id: string; delivered: boolean }>("/api/support/contact", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+
+  listAdminMessages: () =>
+    request<AdminMessagesResponse>("/api/support/admin/messages"),
+
+  updateMessageStatus: (id: string, status: MessageStatus) =>
+    request<{ ok: boolean }>(`/api/support/admin/messages/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify({ status }),
+    }),
+
+  deleteMessage: (id: string) =>
+    request<{ ok: boolean }>(`/api/support/admin/messages/${id}`, { method: "DELETE" }),
 };

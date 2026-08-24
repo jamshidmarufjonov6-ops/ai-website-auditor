@@ -134,6 +134,29 @@ export interface User {
   email: string;
   created_at: string;
   credits: number;
+  is_admin?: boolean;
+}
+
+export type MessageStatus = "new" | "read" | "replied";
+
+export interface Message {
+  id: string;
+  user_id: string | null;
+  name: string;
+  email: string;
+  subject: string;
+  body: string;
+  status: MessageStatus;
+  email_forwarded: boolean;
+  forward_error: string | null;
+  created_at: string;
+}
+
+export interface AdminMessagesResponse {
+  total: number;
+  unread: number;
+  mail_configured: boolean;
+  messages: Message[];
 }
 
 export interface CreditsInfo {

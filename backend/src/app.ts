@@ -4,6 +4,7 @@ import { config } from "./config.js";
 import { authRouter } from "./routes/auth.js";
 import { auditsRouter } from "./routes/audits.js";
 import { billingRouter } from "./routes/billing.js";
+import { supportRouter } from "./routes/support.js";
 import { URLValidationError } from "./services/crawler/urlValidator.js";
 
 export const app = express();
@@ -18,6 +19,7 @@ app.get("/api/health", (_req, res) => {
 app.use("/api/auth", authRouter);
 app.use("/api/audits", auditsRouter);
 app.use("/api/billing", billingRouter);
+app.use("/api/support", supportRouter);
 
 app.use((req: Request, res: Response) => {
   res.status(404).json({ detail: "Not found." });

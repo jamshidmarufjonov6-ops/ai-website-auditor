@@ -95,7 +95,12 @@ auditsRouter.post(
     }
 
     // Consume one credit atomically. Every user starts with free credits.
+    // Safety net: backfill credits for legacy accounts missing the field.
     const user = req.user!;
+    await collections().users.updateOne(
+      { _id: user._id, $or: [{ credits: { $exists: false } }, { credits: null }] },
+      { $set: { credits: config.freeCredits } }
+    );
     const creditResult = await collections().users.updateOne(
       { _id: user._id, credits: { $gt: 0 } },
       { $inc: { credits: -1 } }

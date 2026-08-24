@@ -30,6 +30,7 @@ class SlidingWindowLimiter {
 export const auditPerHour = new SlidingWindowLimiter(config.rateLimitAuditPerHour, 3600);
 export const auditPerMinute = new SlidingWindowLimiter(config.rateLimitAuditPerMinute, 60);
 export const authPerMinute = new SlidingWindowLimiter(config.rateLimitAuthPerMinute, 60);
+export const contactPerHour = new SlidingWindowLimiter(5, 3600);
 
 export function clientKey(req: Request): string {
   const forwarded = req.headers["x-forwarded-for"];

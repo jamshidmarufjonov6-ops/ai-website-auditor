@@ -18,24 +18,137 @@ body {
   @apply bg-ink-50 text-ink-900 antialiased dark:bg-ink-950 dark:text-ink-100;
 }
 
+/* ---------- Layout helpers ---------- */
+
 @layer components {
   .container-page {
     @apply mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8;
   }
+
+  /* ---------- Surfaces ---------- */
+
   .card {
-    @apply rounded-2xl border border-ink-200/70 bg-white shadow-card dark:border-ink-700 dark:bg-ink-900;
+    @apply rounded-2xl border border-ink-200/70 bg-white shadow-card dark:border-white/[0.08] dark:bg-ink-900/70 dark:shadow-none dark:backdrop-blur-sm;
   }
+
+  .glass {
+    @apply rounded-2xl border border-ink-200/70 bg-white/80 shadow-card backdrop-blur-xl dark:border-white/[0.09] dark:bg-white/[0.04] dark:shadow-glow-sm dark:backdrop-blur-xl;
+  }
+
+  .card-hover {
+    @apply transition duration-300 hover:-translate-y-1 hover:border-brand-300/60 hover:shadow-card dark:hover:border-accent-500/40 dark:hover:shadow-glow-sm;
+  }
+
+  /* Gradient-border panel (CTA / hero form) */
+  .glow-border {
+    position: relative;
+    background:
+      linear-gradient(
+        to right,
+        color-mix(in srgb, #7c3aed 22%, transparent),
+        color-mix(in srgb, #3b6df6 18%, transparent),
+        color-mix(in srgb, #22d3ee 16%, transparent)
+      );
+    padding: 1px;
+    border-radius: 1.25rem;
+  }
+  .dark .glow-border {
+    background:
+      linear-gradient(135deg, rgba(124, 58, 237, 0.55), rgba(59, 109, 246, 0.35), rgba(34, 211, 238, 0.30));
+  }
+  .glow-border > * {
+    height: 100%;
+    border-radius: inherit;
+  }
+
+  /* ---------- Typography ---------- */
+
+  .text-gradient {
+    @apply bg-gradient-to-r from-accent-400 via-brand-400 to-cyan-300 bg-clip-text text-transparent dark:from-accent-400 dark:via-brand-400 dark:to-cyan-300;
+  }
+
+  .section-title {
+    @apply text-3xl font-bold tracking-tight sm:text-4xl;
+  }
+
+  .eyebrow {
+    @apply inline-flex items-center gap-2 rounded-full border border-accent-200 bg-accent-50 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-accent-700 dark:border-accent-500/25 dark:bg-accent-500/10 dark:text-accent-300;
+  }
+
+  /* ---------- Buttons ---------- */
+
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-2 rounded-xl bg-brand-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-500/50 disabled:cursor-not-allowed disabled:opacity-60;
+    @apply relative inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-accent-600 via-brand-600 to-brand-500 px-5 py-3 text-sm font-semibold text-white shadow-glow-sm transition duration-300 hover:from-accent-500 hover:via-brand-500 hover:to-brand-400 hover:shadow-glow focus:outline-none focus:ring-2 focus:ring-accent-500/60 disabled:cursor-not-allowed disabled:opacity-60;
   }
+
   .btn-secondary {
-    @apply inline-flex items-center justify-center gap-2 rounded-xl border border-ink-300 bg-transparent px-5 py-3 text-sm font-semibold text-ink-800 transition hover:bg-ink-100 dark:border-ink-600 dark:text-ink-100 dark:hover:bg-ink-800;
+    @apply inline-flex items-center justify-center gap-2 rounded-xl border border-ink-300 bg-transparent px-5 py-3 text-sm font-semibold text-ink-800 transition hover:border-brand-400 hover:text-brand-700 hover:bg-brand-50/60 dark:border-white/15 dark:text-ink-100 dark:hover:border-accent-500/50 dark:hover:bg-white/[0.06] dark:hover:text-white;
   }
+
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-ink-600 transition hover:bg-ink-100 hover:text-ink-900 dark:text-ink-300 dark:hover:bg-white/[0.07] dark:hover:text-white;
+  }
+
+  /* ---------- Forms ---------- */
+
   .input {
-    @apply w-full rounded-xl border border-ink-300 bg-white px-4 py-3 text-sm text-ink-900 placeholder:text-ink-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/40 dark:border-ink-600 dark:bg-ink-800 dark:text-ink-100;
+    @apply w-full rounded-xl border border-ink-300 bg-white px-4 py-3 text-sm text-ink-900 placeholder:text-ink-400 focus:border-accent-500 focus:outline-none focus:ring-2 focus:ring-accent-500/40 dark:border-white/[0.12] dark:bg-white/[0.05] dark:text-ink-100 dark:placeholder:text-ink-500;
   }
+
+  .label {
+    @apply mb-1.5 block text-xs font-semibold uppercase tracking-wide text-ink-500 dark:text-ink-400;
+  }
+
   .badge {
     @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold;
+  }
+}
+
+/* ---------- Decorative backgrounds ---------- */
+
+@layer utilities {
+  /* Soft aurora blobs for hero sections */
+  .aurora-bg {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+  }
+  .aurora-bg::before,
+  .aurora-bg::after {
+    content: "";
+    position: absolute;
+    width: 42rem;
+    height: 42rem;
+    max-width: 140vw;
+    max-height: 140vw;
+    border-radius: 9999px;
+    filter: blur(110px);
+    opacity: 0.5;
+  }
+  .aurora-bg::before {
+    top: -18rem;
+    left: -10rem;
+    background: radial-gradient(circle at center, rgba(124, 58, 237, 0.45), transparent 65%);
+    animation: aurora 18s ease-in-out infinite;
+  }
+  .aurora-bg::after {
+    top: -14rem;
+    right: -12rem;
+    background: radial-gradient(circle at center, rgba(34, 211, 238, 0.32), transparent 65%);
+    animation: aurora 24s ease-in-out infinite reverse;
+  }
+  :root:not(.dark) .aurora-bg::before { opacity: 0.28; }
+  :root:not(.dark) .aurora-bg::after { opacity: 0.20; }
+
+  /* Faint technical grid */
+  .grid-bg {
+    background-image:
+      linear-gradient(to right, rgba(148, 163, 184, 0.08) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(148, 163, 184, 0.08) 1px, transparent 1px);
+    background-size: 44px 44px;
+    mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, black 40%, transparent 100%);
+    -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, black 40%, transparent 100%);
   }
 }
 

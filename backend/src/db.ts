@@ -32,6 +32,7 @@ export function collections() {
     audits: database.collection<AuditDoc>("audits"),
     websites: database.collection<WebsiteDoc>("websites"),
     webhookEvents: database.collection<WebhookEventDoc>("webhook_events"),
+    messages: database.collection<MessageDoc>("messages"),
   };
 }
 
@@ -44,7 +45,7 @@ export interface UserDoc {
   email: string;
   passwordHash: string;
   createdAt: Date;
-  credits?: number;
+  credits?: number | null;
   stripeCustomerId?: string | null;
 }
 
@@ -60,6 +61,22 @@ export interface WebhookEventDoc {
   eventId: string;
   eventType: string;
   processedAt: Date;
+}
+
+export type MessageStatus = "new" | "read" | "replied";
+
+export interface MessageDoc {
+  _id: ObjectId;
+  userId: ObjectId | null;
+  name: string;
+  email: string;
+  subject: string;
+  body: string;
+  status: MessageStatus;
+  emailForwarded: boolean;
+  forwardError?: string | null;
+  ip?: string | null;
+  createdAt: Date;
 }
 
 export interface AuditDoc {
@@ -101,4 +118,6 @@ export async function ensureIndexes(): Promise<void> {
   await c.audits.createIndex({ websiteId: 1, completedAt: -1 });
   await c.websites.createIndex({ domain: 1 }, { unique: true });
   await c.webhookEvents.createIndex({ eventId: 1 }, { unique: true });
+  await c.messages.createIndex({ createdAt: -1 });
+  await c.messages.createIndex({ status: 1, createdAt: -1 });
 }

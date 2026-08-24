@@ -15,6 +15,7 @@ function serializeUser(user: { _id: unknown; email: string; createdAt: Date; cre
     email: user.email,
     created_at: user.createdAt,
     credits: user.credits ?? config.freeCredits,
+    is_admin: Boolean(config.adminEmail) && user.email.toLowerCase() === config.adminEmail,
   };
 }
 
