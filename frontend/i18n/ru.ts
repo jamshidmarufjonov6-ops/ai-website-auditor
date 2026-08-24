@@ -85,7 +85,7 @@ export const ru: Record<string, string> = {
   urlStartFreeAudit: "Начать бесплатный аудит",
   urlNote: "Только публичные http/https сайты. Аудит ограничен небольшим числом страниц.",
   urlErrorDefault: "Не удалось запустить аудит. Попробуйте ещё раз.",
-  urlUpgradeCta: "Перейти на Pro",
+  urlUpgradeCta: "Купить больше кредитов",
 
   loginTitle: "Вход",
   loginSubtitle: "Доступ к истории аудитов и сохранённым отчётам.",
@@ -299,4 +299,18 @@ export const ru: Record<string, string> = {
   billingStatusTrialing: "Пробный",
   billingStatusIncomplete: "Незавершён",
   billingNoStripe: "В этом окружении платежи не настроены. Для обновления обратитесь к администратору.",
+
+  navCredits: "Кредиты",
+  dashboardCredits: "Осталось кредитов: {count}",
+  dashboardBuyCredits: "Купить кредиты",
+  creditsTitle: "Кредиты",
+  creditsSubtitle: "Каждый аудит использует 1 кредит. Новые аккаунты получают 2 бесплатных кредита.",
+  creditsRemaining: "Осталось кредитов",
+  creditsPackTitle: "Пакет кредитов",
+  creditsPackDesc: "{count} аудитов",
+  creditsBuy: "Купить",
+  creditsNotConfigured: "Платежи пока не настроены.",
+  creditsBackDashboard: "Вернуться на дашборд",
+  creditsLoading: "Загрузка кредитов…",
+  creditsErrorDefault: "Не удалось загрузить кредиты.",
 };

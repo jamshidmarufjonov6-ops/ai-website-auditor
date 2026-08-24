@@ -31,6 +31,7 @@ export function collections() {
     users: database.collection<UserDoc>("users"),
     audits: database.collection<AuditDoc>("audits"),
     websites: database.collection<WebsiteDoc>("websites"),
+    webhookEvents: database.collection<WebhookEventDoc>("webhook_events"),
   };
 }
 
@@ -43,6 +44,8 @@ export interface UserDoc {
   email: string;
   passwordHash: string;
   createdAt: Date;
+  credits?: number;
+  stripeCustomerId?: string | null;
 }
 
 export interface WebsiteDoc {
@@ -52,9 +55,17 @@ export interface WebsiteDoc {
   lastAuditedAt?: Date;
 }
 
+export interface WebhookEventDoc {
+  _id: ObjectId;
+  eventId: string;
+  eventType: string;
+  processedAt: Date;
+}
+
 export interface AuditDoc {
   _id: ObjectId;
   publicId: string;
+  shareId: string;
   userId: ObjectId | null;
   websiteId: ObjectId | null;
   url: string;
@@ -78,7 +89,16 @@ export async function ensureIndexes(): Promise<void> {
   const c = collections();
   await c.users.createIndex({ email: 1 }, { unique: true });
   await c.audits.createIndex({ publicId: 1 }, { unique: true });
+  // Replace any old non-sparse shareId index with a sparse unique index so
+  // audits created before share links still coexist.
+  try {
+    await c.audits.dropIndex("shareId_1");
+  } catch {
+    // index does not exist yet
+  }
+  await c.audits.createIndex({ shareId: 1 }, { unique: true, sparse: true });
   await c.audits.createIndex({ userId: 1, startedAt: -1 });
   await c.audits.createIndex({ websiteId: 1, completedAt: -1 });
   await c.websites.createIndex({ domain: 1 }, { unique: true });
+  await c.webhookEvents.createIndex({ eventId: 1 }, { unique: true });
 }

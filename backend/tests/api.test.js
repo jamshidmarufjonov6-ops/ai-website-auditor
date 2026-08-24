@@ -49,6 +49,7 @@ describe("API integration (MongoDB)", { skip: !hasMongo && "MONGODB_URL not set 
     assert.ok(res.body.token);
     assert.ok(res.body.user.id);
     assert.equal(res.body.user.email, EMAIL);
+    assert.equal(res.body.user.credits, 2);
     token = res.body.token;
     userId = res.body.user.id;
   });
@@ -75,6 +76,11 @@ describe("API integration (MongoDB)", { skip: !hasMongo && "MONGODB_URL not set 
     assert.equal(res.status, 401);
   });
 
+  it("requires auth to create an audit", async () => {
+    const res = await request(app).post("/api/audits").send({ url: "https://example.com", language: "en" });
+    assert.equal(res.status, 401);
+  });
+
   it("rejects blocked URLs (SSRF/localhost)", async () => {
     const res = await request(app)
       .post("/api/audits")
@@ -91,6 +97,7 @@ describe("API integration (MongoDB)", { skip: !hasMongo && "MONGODB_URL not set 
     assert.equal(created.status, 201);
     assert.equal(created.body.status, "queued");
     audit = created.body;
+    assert.ok(audit.share_id);
 
     // Poll until the audit finishes or fails.
     let current = audit;
@@ -109,6 +116,12 @@ describe("API integration (MongoDB)", { skip: !hasMongo && "MONGODB_URL not set 
       assert.ok(Array.isArray(current.results.checks));
       assert.ok(current.results.checks.length > 0);
     }
+  });
+
+  it("public share link is viewable without login", async () => {
+    const res = await request(app).get(`/api/audits/shared/${audit.share_id}`);
+    assert.equal(res.status, 200);
+    assert.equal(res.body.public_id, audit.public_id);
   });
 
   it("lists audits and stats for the authenticated user", async () => {
@@ -131,6 +144,34 @@ describe("API integration (MongoDB)", { skip: !hasMongo && "MONGODB_URL not set 
       .get(`/api/audits/${audit.public_id}`)
       .set("Authorization", `Bearer ${otherToken}`);
     assert.equal(res.status, 403);
+  });
+
+  it("consumes credits and blocks audits when credits run out", { timeout: 90_000 }, async () => {
+    const second = await request(app)
+      .post("/api/audits")
+      .set("Authorization", `Bearer ${token}`)
+      .send({ url: "https://example.com", language: "en" });
+    assert.equal(second.status, 201);
+
+    // Wait for the second audit to finish so no background work is left running.
+    let current = second.body;
+    for (let i = 0; i < 60; i++) {
+      if (current.status === "completed" || current.status === "failed") break;
+      await new Promise((r) => setTimeout(r, 1000));
+      const res = await request(app)
+        .get(`/api/audits/${current.public_id}`)
+        .set("Authorization", `Bearer ${token}`);
+      assert.equal(res.status, 200);
+      current = res.body;
+    }
+    assert.ok(["completed", "failed"].includes(current.status));
+
+    const blocked = await request(app)
+      .post("/api/audits")
+      .set("Authorization", `Bearer ${token}`)
+      .send({ url: "https://example.com", language: "en" });
+    assert.equal(blocked.status, 403);
+    assert.equal(blocked.body.detail.code, "credits_exhausted");
   });
 
   it("allows the owner to delete their audit", async () => {

@@ -4,10 +4,10 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useI18n } from "@/i18n";
-import { api } from "@/lib/api";
+import { api, ApiError, clearPendingAuditUrl, getPendingAuditUrl } from "@/lib/api";
 
 export default function LoginPage() {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -20,6 +20,26 @@ export default function LoginPage() {
     setError("");
     try {
       await api.login(email, password);
+      const pendingUrl = getPendingAuditUrl();
+      if (pendingUrl) {
+        clearPendingAuditUrl();
+        try {
+          const audit = await api.createAudit(pendingUrl, lang);
+          router.push(`/audit/${audit.public_id}`);
+          router.refresh();
+          return;
+        } catch (err) {
+          if (err instanceof ApiError && err.code === "credits_exhausted") {
+            setError(err.message);
+            setLoading(false);
+            router.push("/credits");
+            return;
+          }
+          router.push("/dashboard");
+          router.refresh();
+          return;
+        }
+      }
       router.push("/dashboard");
       router.refresh();
     } catch (err) {

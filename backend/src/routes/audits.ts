@@ -1,8 +1,8 @@
 import { Router } from "express";
 import { ObjectId } from "mongodb";
-import { randomUUID } from "node:crypto";
+import { randomBytes, randomUUID } from "node:crypto";
 import { config } from "../config.js";
-import { collections, toId, type AuditDoc } from "../db.js";
+import { collections, type AuditDoc } from "../db.js";
 import { asyncHandler, optionalAuth, requiredAuth, type AuthRequest } from "../middleware/auth.js";
 import { auditPerHour, auditPerMinute, clientKey } from "../rateLimit.js";
 import { enqueueAudit } from "../queue.js";
@@ -15,6 +15,7 @@ function serializeAudit(audit: AuditDoc, previousScore?: number | null) {
     audit.overallScore != null && previousScore != null ? audit.overallScore - previousScore : null;
   return {
     public_id: audit.publicId,
+    share_id: audit.shareId,
     url: audit.url,
     status: audit.status,
     progress: audit.progress,
@@ -63,6 +64,7 @@ auditsRouter.use(optionalAuth);
 
 auditsRouter.post(
   "/",
+  requiredAuth,
   asyncHandler(async (req: AuthRequest, res) => {
     const key = clientKey(req);
     if (!auditPerMinute.allow(key)) {
@@ -92,36 +94,33 @@ auditsRouter.post(
       throw err;
     }
 
-    let maxPages = config.maxPages;
-    if (req.user) {
-      const startOfMonth = new Date();
-      startOfMonth.setUTCDate(1);
-      startOfMonth.setUTCHours(0, 0, 0, 0);
-      const used = await collections().audits.countDocuments({
-        userId: req.user._id,
-        startedAt: { $gte: startOfMonth },
+    // Consume one credit atomically. Every user starts with free credits.
+    const user = req.user!;
+    const creditResult = await collections().users.updateOne(
+      { _id: user._id, credits: { $gt: 0 } },
+      { $inc: { credits: -1 } }
+    );
+    if (creditResult.modifiedCount === 0) {
+      res.status(403).json({
+        detail: {
+          code: "credits_exhausted",
+          message: "You have no credits left. Buy more to continue.",
+        },
       });
-      if (used >= config.monthlyAuditLimit) {
-        res.status(403).json({
-          detail: {
-            code: "monthly_limit_reached",
-            message: "You have reached your monthly audit limit.",
-          },
-        });
-        return;
-      }
+      return;
     }
 
     const audit: AuditDoc = {
       _id: new ObjectId(),
       publicId: randomUUID(),
-      userId: req.user?._id ?? null,
+      shareId: randomBytes(16).toString("hex"),
+      userId: user._id,
       websiteId: null,
       url: validatedUrl,
       status: "queued",
       progress: 0,
       stage: "Queued",
-      maxPages,
+      maxPages: config.maxPages,
       language: lang,
       overallScore: null,
       categoryScores: null,
@@ -169,6 +168,7 @@ auditsRouter.get(
       const previous = await getPreviousScore(audit);
       items.push({
         public_id: audit.publicId,
+        share_id: audit.shareId,
         url: audit.url,
         status: audit.status,
         overall_score: audit.overallScore ?? null,
@@ -201,6 +201,7 @@ auditsRouter.get(
       best_score: scores.length ? Math.max(...scores) : null,
       recent_audits: recent.map((a) => ({
         public_id: a.publicId,
+        share_id: a.shareId,
         url: a.url,
         status: a.status,
         overall_score: a.overallScore ?? null,
@@ -209,6 +210,19 @@ auditsRouter.get(
         error_code: a.errorCode ?? null,
       })),
     });
+  })
+);
+
+// Public share link — anyone with this unique shareId can view the result without login.
+auditsRouter.get(
+  "/shared/:shareId",
+  asyncHandler(async (req: AuthRequest, res) => {
+    const audit = await collections().audits.findOne({ shareId: req.params.shareId });
+    if (!audit) {
+      res.status(404).json({ detail: "Audit not found." });
+      return;
+    }
+    res.json(serializeAudit(audit, await getPreviousScore(audit)));
   })
 );
 

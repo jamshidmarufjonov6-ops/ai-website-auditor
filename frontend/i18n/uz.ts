@@ -85,7 +85,7 @@ export const uz: Record<string, string> = {
   urlStartFreeAudit: "Bepul auditni boshlash",
   urlNote: "Faqat ochiq http/https saytlar. Auditlar cheklangan sahifalar sonini o'rganadi.",
   urlErrorDefault: "Auditni boshlab bo'lmadi. Qayta urinib ko'ring.",
-  urlUpgradeCta: "Pro rejimga o'tish",
+  urlUpgradeCta: "Ko'proq kredit sotib olish",
 
   loginTitle: "Kirish",
   loginSubtitle: "Audit tarixi va saqlangan hisobotlarga kiring.",
@@ -299,4 +299,18 @@ export const uz: Record<string, string> = {
   billingStatusTrialing: "Sinov",
   billingStatusIncomplete: "To'liq emas",
   billingNoStripe: "Bu muhitda to'lovlar sozlanmagan. Yangilash uchun administratorga murojaat qiling.",
+
+  navCredits: "Kreditlar",
+  dashboardCredits: "Qolgan kreditlar: {count}",
+  dashboardBuyCredits: "Ko'proq kredit sotib olish",
+  creditsTitle: "Kreditlar",
+  creditsSubtitle: "Har bir audit 1 kredit ishlatadi. Yangi akkauntlar 2 ta bepul kredit oladi.",
+  creditsRemaining: "Qolgan kreditlar",
+  creditsPackTitle: "Kredit paketi",
+  creditsPackDesc: "{count} ta audit",
+  creditsBuy: "Sotib olish",
+  creditsNotConfigured: "To'lovlar hali sozlanmagan.",
+  creditsBackDashboard: "Boshqaruv paneliga qaytish",
+  creditsLoading: "Kreditlar yuklanmoqda…",
+  creditsErrorDefault: "Kreditlarni yuklab bo'lmadi.",
 };

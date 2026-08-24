@@ -24,9 +24,12 @@ A production-oriented SaaS web application that audits any public website across
 - Progress checklist while the audit runs, plus partial-audit notices and structured error messages.
 - Print-friendly report page with a plain-language summary (save as PDF from the browser).
 - User accounts with PBKDF2 password hashing and **Bearer JWT authentication**.
+- **Login is required to run audits.** New accounts get 2 free credits; every audit uses 1 credit.
+- **Stripe credit packs**: when credits run out, users can buy packs (e.g. 10 audits) via Stripe checkout (optional — works without Stripe configured).
+- Every completed audit gets a **unique public share link** (`/share/:shareId`) that anyone can open without logging in.
 - Authenticated dashboard with real statistics (total audits, completed, average, best, recent).
 - Audit history with score-change indicators (+/− points vs previous audit), partial/error badges, and report links.
-- Private user-owned audits: users can never view or delete another user's audit. Anonymous audits remain shareable by UUID.
+- Private user-owned audits: users can never view or delete another user's audit; share links are the only public access.
 - Multilingual UI: English, O'zbekcha, Русский with a persistent language switcher.
 - Rate limiting, request timeouts, page-size caps, safe URL validation, and SSRF-resistant redirect handling.
 - Dark mode by default, light mode supported.
@@ -86,7 +89,7 @@ Open http://localhost:3000. The Next.js dev server rewrites `/api/*` to `http://
 
 ## Environment variables
 
-The entire app is configured with **three** variables (plus an optional `PORT`):
+Core app — three variables (plus an optional `PORT`):
 
 | Variable | Purpose | Default |
 | --- | --- | --- |
@@ -95,17 +98,37 @@ The entire app is configured with **three** variables (plus an optional `PORT`):
 | `CORS_ORIGINS` | Comma-separated allowed browser origins | `http://localhost:3000,http://127.0.0.1:3000` |
 | `PORT` | API port (optional) | `8000` |
 
-That's it — no Redis, no Stripe, no AI provider keys, no database migrations.
+Optional Stripe credit packs (leave empty to disable payments — the app still works, checkout just returns "not configured"):
+
+| Variable | Purpose |
+| --- | --- |
+| `STRIPE_SECRET_KEY` | Stripe secret key |
+| `STRIPE_WEBHOOK_SECRET` | Stripe webhook signing secret |
+| `STRIPE_CREDIT_PACK_PRICE_ID` | Stripe Price ID for one credit pack (10 audits) |
+| `STRIPE_SUCCESS_URL` | Redirect after successful payment |
+| `STRIPE_CANCEL_URL` | Redirect after cancelled payment |
 
 ## API auth
 
 The backend uses **Bearer tokens** only:
 
-1. `POST /api/auth/register` returns `{ user, token }`.
+1. `POST /api/auth/register` returns `{ user, token }` — new users get 2 free credits.
 2. `POST /api/auth/login` returns `{ user, token }`.
 3. Store the token in the frontend and send `Authorization: Bearer <token>` on every request.
 
 The frontend stores the token in `localStorage` under `auditor_token`.
+
+## Credits & payments
+
+- Every audit consumes **1 credit**.
+- New accounts start with **2 free credits**.
+- When credits reach 0, `POST /api/audits` returns `403 { code: "credits_exhausted" }`.
+- Users buy more credits on `/credits` via Stripe checkout (`POST /api/billing/checkout`).
+- Stripe webhook (`POST /api/billing/webhook`) grants credits after a successful payment.
+
+## Public share links
+
+Every audit has a unique `share_id`. Anyone can open `/share/:shareId` and see the result **without logging in**. The dashboard URL (`/audit/:publicId`) remains private to the owner.
 
 ## Running tests
 

@@ -69,6 +69,7 @@ export interface AuditSummary {
 
 export interface Audit {
   public_id: string;
+  share_id: string;
   url: string;
   status: "queued" | "running" | "completed" | "failed";
   progress: number;
@@ -101,6 +102,7 @@ export interface Audit {
 
 export interface AuditListItem {
   public_id: string;
+  share_id?: string;
   url: string;
   status: string;
   overall_score: number | null;
@@ -131,4 +133,15 @@ export interface User {
   id: string;
   email: string;
   created_at: string;
+  credits: number;
+}
+
+export interface CreditsInfo {
+  credits: number;
+  payments_configured: boolean;
+  pack: {
+    size: number;
+    price_usd: number;
+    price_id: string;
+  };
 }

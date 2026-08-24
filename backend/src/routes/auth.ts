@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { ObjectId } from "mongodb";
+import { config } from "../config.js";
 import { collections } from "../db.js";
 import { clientKey } from "../rateLimit.js";
 import { authPerMinute } from "../rateLimit.js";
@@ -8,11 +9,12 @@ import { asyncHandler, optionalAuth, requiredAuth, type AuthRequest } from "../m
 
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
-function serializeUser(user: { _id: unknown; email: string; createdAt: Date }) {
+function serializeUser(user: { _id: unknown; email: string; createdAt: Date; credits?: number | null }) {
   return {
     id: String(user._id),
     email: user.email,
     created_at: user.createdAt,
+    credits: user.credits ?? config.freeCredits,
   };
 }
 
@@ -55,11 +57,12 @@ authRouter.post(
       email,
       passwordHash: hashPassword(password),
       createdAt: new Date(),
+      credits: config.freeCredits,
     };
     const result = await collections().users.insertOne(user);
     const token = createAccessToken(result.insertedId.toString());
     res.status(201).json({
-      user: serializeUser({ _id: result.insertedId, email, createdAt: user.createdAt }),
+      user: serializeUser({ _id: result.insertedId, email, createdAt: user.createdAt, credits: user.credits }),
       token,
     });
   })

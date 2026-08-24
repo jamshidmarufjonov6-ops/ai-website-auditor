@@ -24,8 +24,17 @@ export const config = {
   rateLimitAuthPerMinute: 10,
   maxConcurrentAudits: 2,
 
-  // Usage limits (simple, no billing)
-  monthlyAuditLimit: 3,
+  // Usage limits (simple credits, no subscription)
+  freeCredits: 2,
+  creditPackSize: 10,
+  creditPackPriceUsd: 9,
+
+  // Stripe credit packs (optional — app works without them)
+  stripeSecretKey: process.env.STRIPE_SECRET_KEY || "",
+  stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET || "",
+  stripeCreditPackPriceId: process.env.STRIPE_CREDIT_PACK_PRICE_ID || "",
+  stripeSuccessUrl: process.env.STRIPE_SUCCESS_URL || "http://localhost:3000/credits?billing=success",
+  stripeCancelUrl: process.env.STRIPE_CANCEL_URL || "http://localhost:3000/credits?billing=cancelled",
 } as const;
 
 export function corsOriginList(): string[] {

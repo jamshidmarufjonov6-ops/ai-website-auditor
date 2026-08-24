@@ -42,7 +42,15 @@ function ErrorHint({ code, t }: { code: string | null; t: (k: string) => string 
   return <p className="mt-2 text-sm text-ink-500 dark:text-ink-400">{t(key)}</p>;
 }
 
-export default function AuditDashboard({ publicId }: { publicId: string }) {
+export default function AuditDashboard({
+  publicId,
+  fetchAudit,
+  isPublic = false,
+}: {
+  publicId: string;
+  fetchAudit?: (publicId: string) => Promise<Audit>;
+  isPublic?: boolean;
+}) {
   const { t } = useI18n();
   const [audit, setAudit] = useState<Audit | null>(null);
   const [error, setError] = useState("");
@@ -53,7 +61,8 @@ export default function AuditDashboard({ publicId }: { publicId: string }) {
     let active = true;
     const poll = async () => {
       try {
-        const data = await api.getAudit(publicId);
+        const getAudit = fetchAudit || api.getAudit;
+        const data = await getAudit(publicId);
         if (!active) return;
         setAudit(data);
         if (data.status === "completed" || data.status === "failed") {
@@ -75,7 +84,10 @@ export default function AuditDashboard({ publicId }: { publicId: string }) {
 
   const copyLink = async () => {
     try {
-      await navigator.clipboard.writeText(window.location.href);
+      const shareUrl = audit?.share_id
+        ? `${window.location.origin}/share/${audit.share_id}`
+        : window.location.href;
+      await navigator.clipboard.writeText(shareUrl);
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     } catch {
@@ -197,9 +209,11 @@ export default function AuditDashboard({ publicId }: { publicId: string }) {
           <button onClick={copyLink} className="btn-secondary !py-2">
             {copied ? t("auditLinkCopied") : t("auditShareLink")}
           </button>
-          <Link href={`/report/${audit.public_id}`} className="btn-primary !py-2">
-            {t("auditViewReport")}
-          </Link>
+          {!isPublic && (
+            <Link href={`/report/${audit.public_id}`} className="btn-primary !py-2">
+              {t("auditViewReport")}
+            </Link>
+          )}
         </div>
       </section>
 

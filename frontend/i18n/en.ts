@@ -96,7 +96,7 @@ export const en: Record<string, string> = {
   urlStartFreeAudit: "Start Free Audit",
   urlNote: "Public http/https websites only. Audits are limited to a small set of pages.",
   urlErrorDefault: "Could not start the audit. Please try again.",
-  urlUpgradeCta: "Upgrade to Pro",
+  urlUpgradeCta: "Buy more credits",
 
   // Auth
   loginTitle: "Log in",
@@ -323,4 +323,18 @@ export const en: Record<string, string> = {
   billingStatusTrialing: "Trial",
   billingStatusIncomplete: "Incomplete",
   billingNoStripe: "Payments are not configured in this environment. Contact the administrator for upgrades.",
+
+  navCredits: "Credits",
+  dashboardCredits: "Credits remaining: {count}",
+  dashboardBuyCredits: "Buy more credits",
+  creditsTitle: "Credits",
+  creditsSubtitle: "Each audit uses 1 credit. New accounts get 2 free credits.",
+  creditsRemaining: "Credits remaining",
+  creditsPackTitle: "Credit pack",
+  creditsPackDesc: "{count} audits",
+  creditsBuy: "Buy now",
+  creditsNotConfigured: "Payments are not configured yet.",
+  creditsBackDashboard: "Back to dashboard",
+  creditsLoading: "Loading credits…",
+  creditsErrorDefault: "Could not load credits.",
 };

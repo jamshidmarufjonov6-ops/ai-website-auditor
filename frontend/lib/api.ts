@@ -1,7 +1,8 @@
-import type { Audit, AuditListItem, DashboardStats, User } from "./types";
+import type { Audit, AuditListItem, CreditsInfo, DashboardStats, User } from "./types";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "";
 const TOKEN_KEY = "auditor_token";
+const PENDING_AUDIT_URL_KEY = "pending_audit_url";
 
 export class ApiError extends Error {
   code?: string;
@@ -18,6 +19,23 @@ export class ApiError extends Error {
 export function getToken(): string | null {
   if (typeof window === "undefined") return null;
   return window.localStorage.getItem(TOKEN_KEY);
+}
+
+export function hasToken(): boolean {
+  return Boolean(getToken());
+}
+
+export function setPendingAuditUrl(url: string): void {
+  window.localStorage.setItem(PENDING_AUDIT_URL_KEY, url);
+}
+
+export function getPendingAuditUrl(): string | null {
+  if (typeof window === "undefined") return null;
+  return window.localStorage.getItem(PENDING_AUDIT_URL_KEY);
+}
+
+export function clearPendingAuditUrl(): void {
+  if (typeof window !== "undefined") window.localStorage.removeItem(PENDING_AUDIT_URL_KEY);
 }
 
 function setToken(token: string): void {
@@ -69,9 +87,15 @@ export const api = {
 
   getAudit: (publicId: string) => request<Audit>(`/api/audits/${publicId}`),
 
+  getAuditByShareId: (shareId: string) => request<Audit>(`/api/audits/shared/${shareId}`),
+
   listAudits: () => request<AuditListItem[]>("/api/audits"),
 
   getDashboardStats: () => request<DashboardStats>("/api/audits/stats"),
+
+  getCredits: () => request<CreditsInfo>("/api/billing/credits"),
+
+  checkout: () => request<{ url: string }>("/api/billing/checkout", { method: "POST" }),
 
   deleteAudit: (publicId: string) =>
     request<{ ok: boolean }>(`/api/audits/${publicId}`, { method: "DELETE" }),

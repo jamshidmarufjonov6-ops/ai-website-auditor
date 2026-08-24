@@ -10,10 +10,15 @@ import type { DashboardStats } from "@/lib/types";
 export default function DashboardPage() {
   const { t } = useI18n();
   const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [credits, setCredits] = useState<number | null>(null);
   const [error, setError] = useState("");
 
   const load = () => {
     api.getDashboardStats().then(setStats).catch((err) => setError(err instanceof Error ? err.message : ""));
+    api
+      .getCredits()
+      .then((c) => setCredits(c.credits))
+      .catch(() => setCredits(null));
   };
 
   useEffect(load, []);
@@ -47,6 +52,16 @@ export default function DashboardPage() {
         <div className="mt-4 max-w-xl">
           <UrlForm ctaLabel={t("urlAuditMyWebsite")} />
         </div>
+        {credits !== null && (
+          <p className="mt-4 text-sm text-ink-600 dark:text-ink-300">
+            {t("dashboardCredits").replace("{count}", String(credits))}{" "}
+            {credits === 0 && (
+              <Link href="/credits" className="font-semibold text-brand-600 hover:text-brand-700 dark:text-brand-400">
+                {t("dashboardBuyCredits")}
+              </Link>
+            )}
+          </p>
+        )}
       </section>
 
       {!stats ? (

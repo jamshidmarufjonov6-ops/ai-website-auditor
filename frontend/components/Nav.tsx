@@ -72,6 +72,9 @@ export function Nav() {
               <Link href="/history" className="text-ink-600 hover:text-ink-900 dark:text-ink-300 dark:hover:text-white">
                 {t("navHistory")}
               </Link>
+              <Link href="/credits" className="text-ink-600 hover:text-ink-900 dark:text-ink-300 dark:hover:text-white">
+                {t("navCredits")} ({user.credits ?? 0})
+              </Link>
               <span className="hidden text-xs text-ink-400 sm:inline">{user.email}</span>
               <button onClick={logout} className="btn-secondary !px-3 !py-1.5">
                 {t("navLogout")}

@@ -1,9 +1,10 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useI18n } from "@/i18n";
-import { api, ApiError } from "@/lib/api";
+import { api, ApiError, hasToken, setPendingAuditUrl } from "@/lib/api";
 
 export function UrlForm({ compact = false, ctaLabel }: { compact?: boolean; ctaLabel?: string }) {
   const { t, lang } = useI18n();
@@ -16,6 +17,14 @@ export function UrlForm({ compact = false, ctaLabel }: { compact?: boolean; ctaL
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!url.trim()) return;
+
+    // Audits now require an account.
+    if (!hasToken()) {
+      setPendingAuditUrl(url.trim());
+      router.push("/login?next=/");
+      return;
+    }
+
     setLoading(true);
     setError("");
     setLimitReached(false);
@@ -24,7 +33,7 @@ export function UrlForm({ compact = false, ctaLabel }: { compact?: boolean; ctaL
       router.push(`/audit/${audit.public_id}`);
     } catch (err) {
       const apiErr = err instanceof ApiError ? err : null;
-      if (apiErr?.code === "monthly_limit_reached") {
+      if (apiErr?.code === "credits_exhausted") {
         setLimitReached(true);
         setError(apiErr.message);
       } else {
@@ -71,7 +80,9 @@ export function UrlForm({ compact = false, ctaLabel }: { compact?: boolean; ctaL
       )}
       {limitReached && (
         <div className="mt-3 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-950/50 dark:text-amber-200">
-          {t("urlUpgradeCta")}
+          <Link href="/credits" className="font-semibold underline">
+            {t("urlUpgradeCta")}
+          </Link>
         </div>
       )}
       <p className="mt-3 text-xs text-ink-400 dark:text-ink-400">
