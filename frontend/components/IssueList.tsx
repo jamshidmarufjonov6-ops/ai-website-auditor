@@ -10,6 +10,7 @@ type Filter = "all" | "critical" | "high" | "medium" | "low" | "passed";
 export function IssueList({ checks }: { checks: CheckResult[] }) {
   const { t, tc } = useI18n();
   const [filter, setFilter] = useState<Filter>("all");
+  //comment
 
   const counts = useMemo(
     () => ({
